@@ -1,0 +1,23 @@
+[submodule "terraform"]
+	path = terraform
+	url = git@github.com:KNOSERO/proxmox_teraform_vm.git
+
+[submodule "ansible/task/ansible_k3s"]
+	path = ansible/task/ansible_k3s
+	url = git@github.com:KNOSERO/ansible_k3s.git
+
+[submodule "ansible/task/ansible_nfs"]
+	path = ansible/task/ansible_nfs
+	url = git@github.com:KNOSERO/ansible_nfs.git
+
+[submodule "ansible/task/ansible_docker"]
+	path = ansible/task/ansible_docker
+	url = git@github.com:KNOSERO/ansible_docker.git
+
+[submodule "ansible/task/ansible_keepalived"]
+	path = ansible/task/ansible_keepalived
+	url = git@github.com:KNOSERO/ansible_keepalived.git
+
+[submodule "ansible/task/ansible_gluster"]
+	path = ansible/task/ansible_gluster
+	url = git@github.com:KNOSERO/ansible_gluster.git
