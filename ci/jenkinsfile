@@ -18,7 +18,7 @@ pipeline {
 
         stage('Prepere Config') {
             steps {
-                withCredentials([string(credentialsId: 'env-terraform-proxmox-k3s', variable: 'ENV_TERRAFORM'),
+                withCredentials([file(credentialsId: 'env-terraform-proxmox-k3s', variable: 'ENV_TERRAFORM'),
                                  string(credentialsId: 'user-cluster-k3s', variable: 'USER_CLUSTER'),
                                  string(credentialsId: 'proxmox-access', variable: 'USER_PROXMOX')]) {
                     script {
