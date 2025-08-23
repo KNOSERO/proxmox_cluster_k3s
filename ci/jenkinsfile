@@ -3,31 +3,6 @@ pipeline {
         label 'home'
     }
 
-    parameters {
-        def prevBuild = currentBuild.rawBuild.getPreviousBuild()
-        def lastService = prevBuild?.getBuildVariables()?.get("SERVICE") ?: "dns"
-
-        // Lista usług
-        def services = ['dns', 'grafana', 'jenkins', 'nexus', 'portainer', 'prometheus', 'proxy', 'vpn']
-
-        // Jeśli poprzednia wartość istnieje, ustaw ją jako pierwszą (domyślną)
-        if (services.contains(lastService)) {
-            services.remove(lastService)
-            services.add(0, lastService)
-        }
-
-        // Nadpisz parametry joba
-        properties([
-            parameters([
-                choice(
-                    name: 'SERVICE',
-                    choices: services,
-                    description: 'Wybierz usługę do wdrożenia'
-                )
-            ])
-        ])
-    }
-
     stages {
         stage('Konfiguracja kluczy SSH') {
             steps {
