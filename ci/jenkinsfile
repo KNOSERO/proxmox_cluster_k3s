@@ -17,17 +17,19 @@ pipeline {
         }
 
         stage('Prepere Config') {
-            withCredentials([string(credentialsId: 'env-terraform-proxmox-k3s', variable: 'ENV_TERRAFORM'),
-                             string(credentialsId: 'user-cluster-k3s', variable: 'USER_CLUSTER'),
-                             string(credentialsId: 'proxmox-access', variable: 'USER_PROXMOX')]) {
-                script {
-                    writeFile file: './terraform/env.tfvars', text: ENV_TERRAFORM
+            steps {
+                withCredentials([string(credentialsId: 'env-terraform-proxmox-k3s', variable: 'ENV_TERRAFORM'),
+                                 string(credentialsId: 'user-cluster-k3s', variable: 'USER_CLUSTER'),
+                                 string(credentialsId: 'proxmox-access', variable: 'USER_PROXMOX')]) {
+                    script {
+                        writeFile file: './terraform/env.tfvars', text: ENV_TERRAFORM
 
-                    def variablesTerraform = "containers = " + params.CONFIG_TERRAFORM
-                                           + "\n\nci_user = \"" + USER_CLUSTER + "\""
-                                           + "\n\npm_user = \"" + USER_PROXMOX + "\""
+                        def variablesTerraform = "containers = " + params.CONFIG_TERRAFORM
+                                               + "\n\nci_user = \"" + USER_CLUSTER + "\""
+                                               + "\n\npm_user = \"" + USER_PROXMOX + "\""
 
-                    writeFile file: './terraform/variables.tfvars', text: variablesTerraform
+                        writeFile file: './terraform/variables.tfvars', text: variablesTerraform
+                    }
                 }
             }
         }
