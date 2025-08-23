@@ -1,0 +1,27 @@
+pipeline {
+    agent {
+        label 'home'
+    }
+
+    parameters {
+        choice(
+            name: 'SERVICE',
+            choices: ['dns', 'grafana', 'jenkins', 'nexus', 'portainer', 'prometheus', 'proxy', 'vpn'],
+            description: 'Wybierz usługę do wdrożenia'
+        )
+    }
+
+    stages {
+        stage('Konfiguracja kluczy SSH') {
+            steps {
+                withCredentials([sshUserPrivateKey(credentialsId: 'id_home_lab', keyFileVariable: 'SSH_KEY')]) {
+                    sh '''
+                        mkdir -p /root/.ssh
+                        cp "$SSH_KEY" /root/.ssh/id_home_lab
+                        chmod 600 /root/.ssh/id_home_lab
+                       '''
+                }
+            }
+        }
+    }
+}
