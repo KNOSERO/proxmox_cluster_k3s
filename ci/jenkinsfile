@@ -15,5 +15,23 @@ pipeline {
                 }
             }
         }
+
+        stage('Destroy Custer') {
+            when {
+                expression { params.SERVICE == 'destroy' }
+            }
+            steps {
+                echo "Deployuję DNS"
+            }
+        }
+
+        stage('Apply Custer') {
+            when {
+                expression { params.SERVICE == 'apply' }
+            }
+            steps {
+                echo "Deployuję Grafanę"
+            }
+        }
     }
 }
