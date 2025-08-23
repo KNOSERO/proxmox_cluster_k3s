@@ -24,9 +24,9 @@ pipeline {
                     script {
                         writeFile file: './terraform/env.tfvars', text: ENV_TERRAFORM
 
-                        def variablesTerraform = "containers = " + params.CONFIG_TERRAFORM
-                                               + "\n\nci_user = \"" + USER_CLUSTER + "\""
-                                               + "\n\npm_user = \"" + USER_PROXMOX + "\""
+                        def variablesTerraform = "containers = ${params.CONFIG_TERRAFORM}\n\n" +
+                                                 "ci_user = \"${USER_CLUSTER}\"\n\n" +
+                                                 "pm_user = \"${USER_PROXMOX}\""
 
                         writeFile file: './terraform/variables.tfvars', text: variablesTerraform
                     }
