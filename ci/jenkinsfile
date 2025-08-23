@@ -28,7 +28,6 @@ pipeline {
                                                  "ci_user = \"${USER_CLUSTER}\"\n\n" +
                                                  "pm_user = \"${USER_PROXMOX}\""
 
-                        echo "${variablesTerraform}"
                         writeFile file: './terraform/variables.tfvars', text: variablesTerraform
                     }
                 }
