@@ -4,10 +4,14 @@ pipeline {
     }
 
     parameters {
+        def prevBuild = currentBuild.rawBuild.getPreviousBuild()
+        def lastService = prevBuild?.getBuildVariables()?.get("SERVICE") ?: "dns"
+
         choice(
             name: 'SERVICE',
             choices: ['dns', 'grafana', 'jenkins', 'nexus', 'portainer', 'prometheus', 'proxy', 'vpn'],
             description: 'Wybierz usługę do wdrożenia'
+            defaultValue: lastService
         )
     }
 
