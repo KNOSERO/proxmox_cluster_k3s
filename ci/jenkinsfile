@@ -52,11 +52,10 @@ pipeline {
                     def jsonLike = params.CONFIG_TERRAFORM.replaceAll("=", ":").replaceAll("([0-9\"])(\\s*\\n\\s*[a-zA-Z_])", '$1,\n$2')
                     def arr = readJSON text: jsonLike
 
-                    sh """
-                        terraform init -upgrade
-                    """
-
                     dir('terraform') {
+                        sh """
+                            terraform init -upgrade
+                        """
                         arr.each { obj ->
                             sh """
                               terraform import \
