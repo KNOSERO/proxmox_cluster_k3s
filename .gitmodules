@@ -21,3 +21,7 @@
 [submodule "ansible/task/ansible_gluster"]
 	path = ansible/task/ansible_gluster
 	url = git@github.com:KNOSERO/ansible_gluster.git
+
+[submodule "ci/utils"]
+	path = ci/utils
+	url = git@github.com:KNOSERO/jenkins_utils.git
