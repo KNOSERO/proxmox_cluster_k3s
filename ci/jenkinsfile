@@ -58,7 +58,6 @@ pipeline {
                         }
                         ansibleInventory += masterAnsibleInventory + workerAnsibleInventory
 
-                        echo "${ansibleInventory}"
                         writeFile file: './ansible/inventory.ini', text: ansibleInventory
                     }
                     withCredentials([file(credentialsId: 'env-terraform-proxmox-k3s', variable: 'ENV_TERRAFORM')]) {
