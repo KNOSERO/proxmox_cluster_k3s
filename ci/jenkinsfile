@@ -3,13 +3,13 @@ pipeline {
         label 'home'
     }
 
-    stage('Init submodules') {
-        steps {
-            sh 'git submodule update --init --recursive'
-        }
-    }
-
     stages {
+        stage('Init submodules') {
+            steps {
+                sh 'git submodule update --init --recursive'
+            }
+        }
+
         stage('Konfiguracja kluczy SSH') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'id_home_lab', keyFileVariable: 'SSH_KEY')]) {
