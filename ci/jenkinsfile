@@ -55,18 +55,20 @@ pipeline {
                     def jsonLike = params.CONFIG_TERRAFORM.replaceAll("=", ":").replaceAll("([0-9\"])(\\s*\\n\\s*[a-zA-Z_])", '$1,\n$2')
                     def arr = readJSON text: jsonLike
 
-                    dir('terraform') {
-                        sh """
-                            terraform init -upgrade
-                        """
-                        arr.each { obj ->
+                    ansiColor('xterm') {
+                        dir('terraform') {
                             sh """
-                              terraform import \
-                                -var-file=variables.tfvars \
-                                -var-file=env.tfvars \
-                                'proxmox_vm_qemu.ubuntu_vm[\"${obj.name}\"]' \
-                                '${obj.target_node}/qemu/${obj.vmid}'
+                                terraform init -upgrade
                             """
+                            arr.each { obj ->
+                                sh """
+                                  terraform import \
+                                    -var-file=variables.tfvars \
+                                    -var-file=env.tfvars \
+                                    'proxmox_vm_qemu.ubuntu_vm[\"${obj.name}\"]' \
+                                    '${obj.target_node}/qemu/${obj.vmid}'
+                                """
+                            }
                         }
                     }
                 }
@@ -78,10 +80,12 @@ pipeline {
                 expression { params.TASK == 'destroy' }
             }
             steps {
-                dir('terraform') {
-                    sh """
-                        terraform destroy -var-file=variables.tfvars -var-file=env.tfvars -auto-approve
-                    """
+                ansiColor('xterm') {
+                    dir('terraform') {
+                        sh """
+                            terraform destroy -var-file=variables.tfvars -var-file=env.tfvars -auto-approve
+                        """
+                    }
                 }
             }
         }
@@ -91,7 +95,14 @@ pipeline {
                 expression { params.TASK == 'apply' }
             }
             steps {
-                echo "Deployuję Grafanę"
+                ansiColor('xterm') {
+                    dir('terraform') {
+                        sh """
+                            terraform plan -var-file=variables.tfvars -var-file=env.tfvars
+                            terraform apply -var-file=variables.tfvars -var-file=env.tfvars -auto-approve
+                        """
+                    }
+                }
             }
         }
     }
