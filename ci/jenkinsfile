@@ -49,7 +49,7 @@ pipeline {
                         def masterAnsibleInventory = "[MASTER]\n"
 
                         def workerAnsibleInventory = "[WORKER]\n"
-                        arr.each { obj ->
+                        for (obj in arr) {
                             ip = obj.ip_address.toString().replaceAll("/24", "")
                             if (obj.type == "master") {
                                 masterAnsibleInventory = masterAnsibleInventory
