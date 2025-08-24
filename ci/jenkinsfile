@@ -137,7 +137,7 @@ pipeline {
                 ansiColor('xterm') {
                     dir('ansible') {
                         sh '''
-                            ansible-playbook -i inventory.ini playbook.yml
+                            ansible-playbook -i inventory.ini playbook.yml --forks 3 --timeout 20
                         '''
                     }
                 }

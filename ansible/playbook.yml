@@ -13,13 +13,6 @@
       - { volume: core_data, mountpoint: /mnt/core_data }
 
   tasks:
-    - name: Wait for SSH connectivity
-      wait_for_connection:
-        timeout: 60     # max 60 sekund
-        sleep: 20       # przerwa między próbami
-      retries: 3
-      delay: 20
-
     - name: Run install_docker.yml
       include_tasks: task/ansible_docker/playbook.yml
 
