@@ -5,6 +5,7 @@ Configurable process for managing a K3s cluster on Proxmox
 The project needs to be run in Jenkins as a parameterized job.
 
 It can be executed in two modes: apply / destroy.
+
 ![example](./assets/example.png)
 
 ## Module
