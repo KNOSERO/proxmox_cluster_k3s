@@ -6,9 +6,11 @@ pipeline {
     stages {
         stage('Init submodules') {
             steps {
-                sshagent(['github-token']) {
-                    sh 'git submodule update --init --recursive'
-                }
+                sh '''
+                    git config --global url."https://github.com/".insteadOf "git@github.com:"
+                    git submodule sync --recursive
+                    git submodule update --init --recursive
+                '''
             }
         }
 
