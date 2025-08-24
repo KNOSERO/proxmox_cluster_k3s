@@ -21,13 +21,13 @@
       delay: 20
 
     - name: Run install_docker.yml
-      include_tasks: task/install_docker/playbook.yml
+      include_tasks: task/ansible_docker/playbook.yml
 
     - name: Run mount_nfs.yml
-      include_tasks: task/mount_nfs/playbook.yml
+      include_tasks: task/ansible_nfs/playbook.yml
 
     - name: Run install_gluster.yml
-      include_tasks: task/install_gluster/playbook.yml
+      include_tasks: task/ansible_gluster/playbook.yml
 
 - name: Install Keepalived
   hosts: MASTER
@@ -54,7 +54,7 @@
 
   tasks:
     - name: Run install_k3s.yml
-      include_tasks: task/install_k3s/playbook.yml
+      include_tasks: task/ansible_k3s/playbook.yml
 
 - name: Change Hostname
   hosts: all
