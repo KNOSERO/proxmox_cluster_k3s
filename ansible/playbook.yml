@@ -1,0 +1,66 @@
+---
+- name: Install global
+  hosts: all
+  become: yes
+  vars:
+    nfs_shares:
+      - { server_ip: "192.168.0.2", remote: "/media_onyx", local: "/mnt/media_onyx" }
+      - { server_ip: "192.168.0.3", remote: "/media_ruby", local: "/mnt/media_ruby" }
+    glusterfs_servers:
+      - 192.168.0.2
+      - 192.168.0.3
+    glusterfs_mounts:
+      - { volume: core_data, mountpoint: /mnt/core_data }
+
+  tasks:
+    - name: Run install_docker.yml
+      include_tasks: ./task/install_docker/playbook.yml
+
+    - name: Run mount_nfs.yml
+      include_tasks: ./task/mount_nfs/playbook.yml
+
+    - name: Run install_gluster.yml
+      include_tasks: ./task/install_gluster/playbook.yml
+
+- name: Install Keepalived
+  hosts: master1, master2
+  become: yes
+  vars:
+    virtual_ip: "192.168.0.152"
+    virtual_router_id: 52
+    interface: "enp0s11"
+    master_host: "master1"
+
+  tasks:
+    - name: Run install_keepalived.yml
+      include_tasks: ./task/ansible_keepalived/playbook.yml
+
+
+- name: Install K3s HA Cluster
+  hosts: all
+  become: yes
+  vars:
+    vip: 192.168.0.152
+    k3s_token_path: /var/lib/rancher/k3s/server/node-token
+    k3s_token_file: /tmp/k3s_token
+    k3s_version: "v1.29.1+k3s1"
+
+  tasks:
+    - name: Run install_k3s.yml
+      include_tasks: ./task/install_k3s/playbook.yml
+
+- name: Change Hostname
+  hosts: all
+  become: true
+
+  tasks:
+    - name: Set hostname
+      ansible.builtin.hostname:
+        name: "{{ hostname }}"
+
+    - name: Update /etc/hosts
+      ansible.builtin.lineinfile:
+        path: /etc/hosts
+        regexp: '^127\.0\.1\.1\s+'
+        line: "127.0.1.1 k3s"
+        state: present
