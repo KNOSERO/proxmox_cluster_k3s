@@ -16,11 +16,14 @@ pipeline {
 
         stage('Konfiguracja kluczy SSH') {
             steps {
-                withCredentials([sshUserPrivateKey(credentialsId: 'id_home_lab', keyFileVariable: 'SSH_KEY')]) {
+                withCredentials([sshUserPrivateKey(credentialsId: 'id_home_lab', keyFileVariable: 'SSH_KEY'),
+                                 sshUserPrivateKey(credentialsId: 'id_home_lab_pub', keyFileVariable: 'SSH_KEY_PUB')]) {
                     sh '''
                         mkdir -p /root/.ssh
                         cp "$SSH_KEY" /root/.ssh/id_home_lab
+                        cp "SSH_KEY_PUB" /root/.ssh/id_home_lab_pub
                         chmod 600 /root/.ssh/id_home_lab
+                        chmod 600 /root/.ssh/id_home_lab_pub
                        '''
                 }
             }
