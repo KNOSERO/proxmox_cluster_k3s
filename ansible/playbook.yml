@@ -2,6 +2,7 @@
 - name: Install global
   hosts: all
   become: yes
+  any_errors_fatal: true
   vars:
     nfs_shares:
       - { server_ip: "192.168.0.2", remote: "/media_onyx", local: "/mnt/media_onyx" }
