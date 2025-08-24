@@ -31,8 +31,6 @@ pipeline {
                 script {
                     withCredentials([string(credentialsId: 'user-cluster-k3s', variable: 'USER_CLUSTER'),
                                      string(credentialsId: 'proxmox-access', variable: 'USER_PROXMOX')]) {
-                        writeFile file: '', text: ENV_TERRAFORM
-
                         def variablesTerraform = "containers = ${params.CONFIG_TERRAFORM}\n\n" +
                                                  "ci_user = \"${USER_CLUSTER}\"\n\n" +
                                                  "pm_user = \"${USER_PROXMOX}\""
