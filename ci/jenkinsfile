@@ -24,7 +24,7 @@ pipeline {
                         cp "$SSH_KEY_PUB" /root/.ssh/id_home_lab.pub
                         chmod 600 /root/.ssh/id_home_lab
                         chmod 600 /root/.ssh/id_home_lab.pub
-                       '''
+                    '''
                 }
             }
         }
@@ -41,10 +41,34 @@ pipeline {
 
                     }
                     withCredentials([file(credentialsId: 'env-terraform-proxmox-k3s', variable: 'ENV_TERRAFORM')]) {
-                        sh """
+                        sh '''
                             cp "\$ENV_TERRAFORM" "./terraform/env.tfvars"
-                        """
+                        '''
                     }
+                    def json = params.CONFIG_TERRAFORM.replaceAll("=", ":").replaceAll("([0-9\"])(\\s*\\n\\s*[a-zA-Z_])", '$1,\n$2')
+                    def arr = readJSON text: json
+
+                    def ip = arr[0].ip_address.replaceAll("/24", "")
+                    def ansibleInventory = "[MAIN]\n" +
+                                           "${arr[0].name} ansible_host=${ip} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
+
+                    def masterAnsibleInventory = "[MASTER]\n"
+
+                    def workerAnsibleInventory = "[WORKER]\n"
+                    arr.each { obj ->
+                        def ip = obj.ip_address.replaceAll("/24", "")
+                        if (obj.type == "master") {
+                            masterAnsibleInventory = masterAnsibleInventory
+                                                   + "${obj.name} ansible_host=${ip} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
+                        } else {
+                            workerAnsibleInventory = workerAnsibleInventory
+                                                   + "${obj.name} ansible_host=${ip} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
+                        }
+                    }
+                    ansibleInventory = ansibleInventory + masterAnsibleInventory + workerAnsibleInventory
+
+                    echo "${ansibleInventory}"
+                    writeFile file: './ansible/inventory.ini', text: ansibleInventory
                 }
             }
         }
@@ -52,16 +76,17 @@ pipeline {
         stage('Import Terraform State') {
             steps {
                 script {
-                    def jsonLike = params.CONFIG_TERRAFORM.replaceAll("=", ":").replaceAll("([0-9\"])(\\s*\\n\\s*[a-zA-Z_])", '$1,\n$2')
-                    def arr = readJSON text: jsonLike
+                    def json = params.CONFIG_TERRAFORM.replaceAll("=", ":").replaceAll("([0-9\"])(\\s*\\n\\s*[a-zA-Z_])", '$1,\n$2')
+                    def arr = readJSON text: json
 
                     ansiColor('xterm') {
                         dir('terraform') {
-                            sh """
+                            sh '''
                                 terraform init -upgrade
-                            """
+                            '''
                             arr.each { obj ->
                                 sh """
+                                  terraform import \
                                   terraform import \
                                     -var-file=variables.tfvars \
                                     -var-file=env.tfvars \
@@ -82,9 +107,9 @@ pipeline {
             steps {
                 ansiColor('xterm') {
                     dir('terraform') {
-                        sh """
+                        sh '''
                             terraform destroy -var-file=variables.tfvars -var-file=env.tfvars -auto-approve
-                        """
+                        '''
                     }
                 }
             }
@@ -97,10 +122,28 @@ pipeline {
             steps {
                 ansiColor('xterm') {
                     dir('terraform') {
-                        sh """
+                        sh '''
                             terraform plan -var-file=variables.tfvars -var-file=env.tfvars
                             terraform apply -var-file=variables.tfvars -var-file=env.tfvars -auto-approve
-                        """
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Install cluster K3s') {
+            when {
+                expression { params.TASK == 'apply' }
+            }
+            environment {
+                ANSIBLE_HOST_KEY_CHECKING = 'False'
+            }
+            steps {
+                ansiColor('xterm') {
+                    dir('ansible') {
+                        sh '''
+                            ansible-playbook -i inventory.ini playbook.yml
+                        '''
                     }
                 }
             }
