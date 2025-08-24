@@ -51,8 +51,7 @@ pipeline {
                         def workerAnsibleInventory = "[WORKER]\n"
                         for (obj in arr) {
 //                             if (obj.type.toString() == "master") {
-                                masterAnsibleInventory = masterAnsibleInventory
-                                                       + "${obj.name} ansible_host=${obj.ip_address.toString().replaceAll("/24", "")} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
+                                masterAnsibleInventory += "${obj.name} ansible_host=${obj.ip_address.toString().replaceAll("/24", "")} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
 //                             } else {
 //                                 workerAnsibleInventory = workerAnsibleInventory
 //                                                        + "${obj.name} ansible_host=${obj.ip_address.toString().replaceAll("/24", "")} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
