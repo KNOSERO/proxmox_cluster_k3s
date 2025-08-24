@@ -23,7 +23,7 @@
       include_tasks: ./task/install_gluster/playbook.yml
 
 - name: Install Keepalived
-  hosts: master1, master2
+  hosts: MASTER
   become: yes
   vars:
     virtual_ip: "192.168.0.152"
