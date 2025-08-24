@@ -75,7 +75,11 @@ pipeline {
                 expression { params.TASK == 'destroy' }
             }
             steps {
-                echo "Deployuję DNS"
+                dir('terraform') {
+                    sh """
+                        terraform destroy -var-file=variables.tfvars -var-file=env.tfvars -auto-approve
+                    """
+                }
             }
         }
 
