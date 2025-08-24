@@ -39,36 +39,36 @@ pipeline {
                                                  "pm_user = \"${USER_PROXMOX}\""
                         writeFile file: './terraform/variables.tfvars', text: variablesTerraform
 
+                        def json = params.CONFIG_TERRAFORM.replaceAll("=", ":").replaceAll("([0-9\"])(\\s*\\n\\s*[a-zA-Z_])", '$1,\n$2')
+                        def arr = readJSON text: json
+
+                        def ip = arr[0].ip_address.replaceAll("/24", "")
+                        def ansibleInventory = "[MAIN]\n" +
+                                               "${arr[0].name} ansible_host=${ip} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
+
+                        def masterAnsibleInventory = "[MASTER]\n"
+
+                        def workerAnsibleInventory = "[WORKER]\n"
+                        arr.each { obj ->
+                            ip = obj.ip_address.replaceAll("/24", "")
+                            if (obj.type == "master") {
+                                masterAnsibleInventory = masterAnsibleInventory
+                                                       + "${obj.name} ansible_host=${ip} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
+                            } else {
+                                workerAnsibleInventory = workerAnsibleInventory
+                                                       + "${obj.name} ansible_host=${ip} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
+                            }
+                        }
+                        ansibleInventory = ansibleInventory + masterAnsibleInventory + workerAnsibleInventory
+
+                        echo "${ansibleInventory}"
+                        writeFile file: './ansible/inventory.ini', text: ansibleInventory
                     }
                     withCredentials([file(credentialsId: 'env-terraform-proxmox-k3s', variable: 'ENV_TERRAFORM')]) {
                         sh '''
                             cp "\$ENV_TERRAFORM" "./terraform/env.tfvars"
                         '''
                     }
-                    def json = params.CONFIG_TERRAFORM.replaceAll("=", ":").replaceAll("([0-9\"])(\\s*\\n\\s*[a-zA-Z_])", '$1,\n$2')
-                    def arr = readJSON text: json
-
-                    def ip = arr[0].ip_address.replaceAll("/24", "")
-                    def ansibleInventory = "[MAIN]\n" +
-                                           "${arr[0].name} ansible_host=${ip} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
-
-                    def masterAnsibleInventory = "[MASTER]\n"
-
-                    def workerAnsibleInventory = "[WORKER]\n"
-                    arr.each { obj ->
-                        ip = obj.ip_address.replaceAll("/24", "")
-                        if (obj.type == "master") {
-                            masterAnsibleInventory = masterAnsibleInventory
-                                                   + "${obj.name} ansible_host=${ip} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
-                        } else {
-                            workerAnsibleInventory = workerAnsibleInventory
-                                                   + "${obj.name} ansible_host=${ip} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
-                        }
-                    }
-                    ansibleInventory = ansibleInventory + masterAnsibleInventory + workerAnsibleInventory
-
-                    echo "${ansibleInventory}"
-                    writeFile file: './ansible/inventory.ini', text: ansibleInventory
                 }
             }
         }
