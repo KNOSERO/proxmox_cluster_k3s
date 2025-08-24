@@ -13,14 +13,21 @@
       - { volume: core_data, mountpoint: /mnt/core_data }
 
   tasks:
+    - name: Wait for SSH connectivity
+      wait_for_connection:
+        timeout: 60     # max 60 sekund
+        sleep: 20       # przerwa między próbami
+      retries: 3
+      delay: 20
+
     - name: Run install_docker.yml
-      include_tasks: ./task/install_docker/playbook.yml
+      include_tasks: task/install_docker/playbook.yml
 
     - name: Run mount_nfs.yml
-      include_tasks: ./task/mount_nfs/playbook.yml
+      include_tasks: task/mount_nfs/playbook.yml
 
     - name: Run install_gluster.yml
-      include_tasks: ./task/install_gluster/playbook.yml
+      include_tasks: task/install_gluster/playbook.yml
 
 - name: Install Keepalived
   hosts: MASTER
@@ -33,7 +40,7 @@
 
   tasks:
     - name: Run install_keepalived.yml
-      include_tasks: ./task/ansible_keepalived/playbook.yml
+      include_tasks: task/ansible_keepalived/playbook.yml
 
 
 - name: Install K3s HA Cluster
@@ -47,7 +54,7 @@
 
   tasks:
     - name: Run install_k3s.yml
-      include_tasks: ./task/install_k3s/playbook.yml
+      include_tasks: task/install_k3s/playbook.yml
 
 - name: Change Hostname
   hosts: all
