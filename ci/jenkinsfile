@@ -28,21 +28,21 @@ pipeline {
 
         stage('Prepere Config') {
             steps {
-                withCredentials([string(credentialsId: 'user-cluster-k3s', variable: 'USER_CLUSTER'),
-                                 string(credentialsId: 'proxmox-access', variable: 'USER_PROXMOX')]) {
-                    script {
-                        writeFile file: './terraform/env.tfvars', text: ENV_TERRAFORM
+                script {
+                    withCredentials([string(credentialsId: 'user-cluster-k3s', variable: 'USER_CLUSTER'),
+                                     string(credentialsId: 'proxmox-access', variable: 'USER_PROXMOX')]) {
+                        writeFile file: '', text: ENV_TERRAFORM
 
                         def variablesTerraform = "containers = ${params.CONFIG_TERRAFORM}\n\n" +
                                                  "ci_user = \"${USER_CLUSTER}\"\n\n" +
                                                  "pm_user = \"${USER_PROXMOX}\""
+                        writeFile file: './terraform/variables.tfvars', text: variablesTerraform
 
-                        withCredentials([file(credentialsId: 'env-terraform-proxmox-k3s', variable: 'ENV_TERRAFORM')]) {
-                            sh """
-                                cp "\$ENV_TERRAFORM" "./terraform/variables.tfvars"
-                            """
-                        }
-                        writeFile file: '.', text: variablesTerraform
+                    }
+                    withCredentials([file(credentialsId: 'env-terraform-proxmox-k3s', variable: 'ENV_TERRAFORM')]) {
+                        sh """
+                            cp "\$ENV_TERRAFORM" "./terraform/env.tfvars"
+                        """
                     }
                 }
             }
