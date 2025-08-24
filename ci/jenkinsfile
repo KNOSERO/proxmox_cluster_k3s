@@ -6,7 +6,7 @@ pipeline {
     stages {
         stage('Init submodules') {
             steps {
-                sshagent(['github-ssh-key']) {
+                sshagent(['github-token']) {
                     sh 'git submodule update --init --recursive'
                 }
             }
