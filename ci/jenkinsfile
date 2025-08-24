@@ -37,7 +37,7 @@ pipeline {
         stage('Import Terraform State') {
             steps {
                 script {
-                    def utils = load 'ci/utils/utils.groovy'
+                    def utils = load 'utils/utils.groovy'
                     def arr = utils.parseJson(params.CONFIG_TERRAFORM)
                     arr.each { obj -> echo "Vmid  = ${obj.vmid}, name = ${obj.name}"}
                 }
