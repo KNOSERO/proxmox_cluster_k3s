@@ -1,9 +1,9 @@
 .idea
 !ansible
+!assets
 !ci
 !terraform
 !.gitignore
 !.gitmodules
 !LICENSE
 !README.md
-*
