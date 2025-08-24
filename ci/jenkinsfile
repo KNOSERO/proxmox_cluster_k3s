@@ -14,7 +14,7 @@ pipeline {
             }
         }
 
-        stage('Konfiguracja kluczy SSH') {
+        stage('SSH key configuration') {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'id_home_lab', keyFileVariable: 'SSH_KEY'),
                                  sshUserPrivateKey(credentialsId: 'id_home_lab_pub', keyFileVariable: 'SSH_KEY_PUB')]) {
@@ -29,7 +29,7 @@ pipeline {
             }
         }
 
-        stage('Prepere Config') {
+        stage('Prepare Config') {
             steps {
                 script {
                     withCredentials([string(credentialsId: 'user-cluster-k3s', variable: 'USER_CLUSTER'),
