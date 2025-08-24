@@ -3,6 +3,12 @@ pipeline {
         label 'home'
     }
 
+    stage('Init submodules') {
+        steps {
+            sh 'git submodule update --init --recursive'
+        }
+    }
+
     stages {
         stage('Konfiguracja kluczy SSH') {
             steps {
