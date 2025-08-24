@@ -42,7 +42,7 @@ pipeline {
                         def json = params.CONFIG_TERRAFORM.replaceAll("=", ":").replaceAll("([0-9\"])(\\s*\\n\\s*[a-zA-Z_])", '$1,\n$2')
                         def arr = readJSON text: json
 
-                        def ip = (arr[0].ip_address as String).replaceAll("/24", "")
+                        def ip = arr[0].ip_address.toString().replaceAll("/24", "")
                         def ansibleInventory = "[MAIN]\n" +
                                                "${arr[0].name} ansible_host=${ip} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
 
@@ -50,7 +50,7 @@ pipeline {
 
                         def workerAnsibleInventory = "[WORKER]\n"
                         arr.each { obj ->
-                            ip = (obj.ip_address as String).replaceAll("/24", "")
+                            ip = obj.ip_address.toString().replaceAll("/24", "")
                             if (obj.type == "master") {
                                 masterAnsibleInventory = masterAnsibleInventory
                                                        + "${obj.name} ansible_host=${ip} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
