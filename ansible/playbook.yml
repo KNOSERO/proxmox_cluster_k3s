@@ -63,11 +63,11 @@
   tasks:
     - name: Set hostname
       ansible.builtin.hostname:
-        name: "{{ hostname }}"
+        name: "{{ inventory_hostname }}"
 
     - name: Update /etc/hosts
       ansible.builtin.lineinfile:
         path: /etc/hosts
         regexp: '^127\.0\.1\.1\s+'
-        line: "127.0.1.1 k3s"
+        line: "127.0.1.1 {{ inventory_hostname }}"
         state: present
