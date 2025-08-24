@@ -49,7 +49,18 @@ pipeline {
                 script {
                     def jsonLike = params.CONFIG_TERRAFORM.replaceAll("=", ":").replaceAll("([0-9\"])(\\s*\\n\\s*[a-zA-Z_])", '$1,\n$2')
                     def arr = readJSON text: jsonLike
-                    arr.each { obj -> echo "Vmid  = ${obj.vmid}, name = ${obj.name}"}
+
+                    dir('terraform') {
+                        arr.each { obj ->
+                            sh """
+                              terraform import \
+                                -var-file=variables.tfvars \
+                                -var-file=env.tfvars \
+                                'proxmox_vm_qemu.ubuntu_vm[\"${obj.name}\"]' \
+                                '${obj.target_node}/qemu/${obj.vmid}'
+                            """
+                        }
+                    }
                 }
             }
         }
