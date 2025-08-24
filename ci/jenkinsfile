@@ -46,20 +46,20 @@ pipeline {
                         def ansibleInventory = "[MAIN]\n" +
                                                "${arr[0].name} ansible_host=${ip} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
 
-//                         def masterAnsibleInventory = "[MASTER]\n"
-//
-//                         def workerAnsibleInventory = "[WORKER]\n"
-//                         for (obj in arr) {
-//                             ip = obj.ip_address.toString().replaceAll("/24", "")
+                        def masterAnsibleInventory = "[MASTER]\n"
+
+                        def workerAnsibleInventory = "[WORKER]\n"
+                        for (obj in arr) {
+                            ip = obj.ip_address.toString().replaceAll("/24", "")
 //                             if (obj.type.toString() == "master") {
-//                                 masterAnsibleInventory = masterAnsibleInventory
-//                                                        + "${obj.name} ansible_host=${ip} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
+                                masterAnsibleInventory = masterAnsibleInventory
+                                                       + "${obj.name} ansible_host=${ip} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
 //                             } else {
 //                                 workerAnsibleInventory = workerAnsibleInventory
 //                                                        + "${obj.name} ansible_host=${ip} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
 //                             }
-//                         }
-//                         ansibleInventory = ansibleInventory + masterAnsibleInventory + workerAnsibleInventory
+                        }
+                        ansibleInventory = ansibleInventory + masterAnsibleInventory + workerAnsibleInventory
 
                         echo "${ansibleInventory}"
                         writeFile file: './ansible/inventory.ini', text: ansibleInventory
@@ -86,7 +86,6 @@ pipeline {
                             '''
                             arr.each { obj ->
                                 sh """
-                                  terraform import \
                                   terraform import \
                                     -var-file=variables.tfvars \
                                     -var-file=env.tfvars \
