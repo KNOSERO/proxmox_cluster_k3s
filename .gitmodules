@@ -24,3 +24,6 @@
 [submodule "ansible/task/ansible_agent_portainer_k3s"]
 	path = ansible/task/ansible_agent_portainer_k3s
 	url = git@github.com:KNOSERO/ansible_agent_portainer_k3s.git
+[submodule "ansible/task/ansible_jenkins_agent_k3s"]
+	path = ansible/task/ansible_jenkins_agent_k3s
+	url = git@github.com:KNOSERO/ansible_jenkins_agent_k3s.git
