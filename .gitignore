@@ -1,4 +1,3 @@
-.idea
 !ansible
 !assets
 !ci
@@ -10,3 +9,4 @@
 
 *
 lib
+.idea
