@@ -21,3 +21,6 @@
 [submodule "ansible/task/ansible_gluster"]
 	path = ansible/task/ansible_gluster
 	url = git@github.com:KNOSERO/ansible_gluster.git
+[submodule "ansible/task/ansible_agent_portainer_k3s"]
+	path = ansible/task/ansible_agent_portainer_k3s
+	url = git@github.com:KNOSERO/ansible_agent_portainer_k3s.git
