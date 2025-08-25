@@ -66,9 +66,12 @@
         line: "127.0.1.1 {{ inventory_hostname }}"
         state: present
 
-- name: Deploy Portainer Agent on Kubernetes
+- name: Deploy Portainer Agent on Kubernetes and Generate Token For Jenkins
   hosts: MAIN
   become: true
   tasks:
     - name: Run install_agent_portainer.yml
       include_tasks: task/ansible_agent_portainer_k3s/playbook.yml
+
+    - name: Run install_jenkins_agent.yml
+      include_tasks: task/ansible_jenkins_agent_k3s/playbook.yml
