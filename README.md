@@ -6,6 +6,8 @@ The project needs to be run in Jenkins as a parameterized job.
 
 It can be executed in two modes: apply / destroy.
 
+![example](./assets/example.png)
+
 ## Module
 * [Terraform Proxmox](https://github.com/KNOSERO/proxmox_teraform_vm)
 * [Ansible K3s](https://github.com/KNOSERO/ansible_k3s)
