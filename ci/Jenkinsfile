@@ -1,0 +1,46 @@
+pipeline {
+    agent {
+        label 'home'
+    }
+    options {
+        skipDefaultCheckout();
+        timestamps();
+        ansiColor('xterm')
+    }
+    environment {
+        REPO_URL = 'https://github.com/KNOSERO/proxmox_cluster_k3s.git'
+        CREDITS_ID = 'github-token'
+        DEFAULT_BRANCH = 'master'
+        SECRET_WEBHOOK = 'github-secret-webhook'
+        ACCOUNT = 'KNOSERO'
+        REPO = 'proxmox_cluster_k3s'
+        PIPELINE_NAME = 'proxmox_cluster_k3s_validate'
+    }
+    stages {
+        stage('Configure Triggers') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'webhookCredentials', variable: 'TOKEN_WEBHOOK')]) {
+                        properties([
+                            pipelineTriggers([
+                                [
+                                    $class: 'GenericTrigger',
+                                    genericVariables: [
+                                        [key: 'PR_ACTION', value: '$.action',                 expressionType: 'JSONPath', defaultValue: ''],
+                                        [key: 'PR_NUMBER', value: '$.number',                 expressionType: 'JSONPath', defaultValue: ''],
+                                        [key: 'PR_SHA',    value: '$.pull_request.head.sha',  expressionType: 'JSONPath', defaultValue: '']
+                                    ],
+                                    token: TOKEN_WEBHOOK,
+                                    printContributedVariables: true,
+                                    printPostContent: false,
+                                    regexpFilterText: '$PR_ACTION',
+                                    regexpFilterExpression: 'opened|reopened|synchronize'
+                                ]
+                            ])
+                        ])
+                    }
+                }
+            }
+        }
+    }
+}
