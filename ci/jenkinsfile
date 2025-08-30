@@ -4,18 +4,18 @@ pipeline {
     }
 
     stages {
-        stage('Init') {
-            parallel {
-                stage('Init submodules') {
-                    steps {
-                        sh '''
-                            git config --global url."https://github.com/".insteadOf "git@github.com:"
-                            git submodule sync --recursive
-                            git submodule update --init --recursive
-                        '''
-                    }
-                }
+        stage('Init Submodule') {
+            steps {
+                sh '''
+                    git config --global url."https://github.com/".insteadOf "git@github.com:"
+                    git submodule sync --recursive
+                    git submodule update --init --recursive
+                '''
+            }
+        }
 
+        stage('Config') {
+            parallel {
                 stage('SSH key configuration') {
                     steps {
                         withCredentials([sshUserPrivateKey(credentialsId: 'id_home_lab', keyFileVariable: 'SSH_KEY'),
@@ -99,32 +99,36 @@ pipeline {
             }
         }
 
-        stage('Destroy Custer') {
-            when {
-                expression { params.TASK == 'destroy' }
-            }
-            steps {
-                ansiColor('xterm') {
-                    dir('terraform') {
-                        sh '''
-                            terraform destroy -var-file=variables.tfvars -var-file=env.tfvars -auto-approve
-                        '''
+        stage('Terraform') {
+            parallel {
+                stage('Destroy Custer') {
+                    when {
+                        expression { params.TASK == 'destroy' }
+                    }
+                    steps {
+                        ansiColor('xterm') {
+                            dir('terraform') {
+                                sh '''
+                                    terraform destroy -var-file=variables.tfvars -var-file=env.tfvars -auto-approve
+                                '''
+                            }
+                        }
                     }
                 }
-            }
-        }
 
-        stage('Apply Custer') {
-            when {
-                expression { params.TASK == 'apply' }
-            }
-            steps {
-                ansiColor('xterm') {
-                    dir('terraform') {
-                        sh '''
-                            terraform plan -var-file=variables.tfvars -var-file=env.tfvars
-                            terraform apply -var-file=variables.tfvars -var-file=env.tfvars -auto-approve
-                        '''
+                stage('Apply Custer') {
+                    when {
+                        expression { params.TASK == 'apply' }
+                    }
+                    steps {
+                        ansiColor('xterm') {
+                            dir('terraform') {
+                                sh '''
+                                    terraform plan -var-file=variables.tfvars -var-file=env.tfvars
+                                    terraform apply -var-file=variables.tfvars -var-file=env.tfvars -auto-approve
+                                '''
+                            }
+                        }
                     }
                 }
             }
