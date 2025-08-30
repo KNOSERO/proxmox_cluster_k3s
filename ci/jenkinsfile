@@ -4,66 +4,70 @@ pipeline {
     }
 
     stages {
-        stage('Init submodules') {
-            steps {
-                sh '''
-                    git config --global url."https://github.com/".insteadOf "git@github.com:"
-                    git submodule sync --recursive
-                    git submodule update --init --recursive
-                '''
-            }
-        }
-
-        stage('SSH key configuration') {
-            steps {
-                withCredentials([sshUserPrivateKey(credentialsId: 'id_home_lab', keyFileVariable: 'SSH_KEY'),
-                                 sshUserPrivateKey(credentialsId: 'id_home_lab_pub', keyFileVariable: 'SSH_KEY_PUB')]) {
-                    sh '''
-                        mkdir -p /root/.ssh
-                        cp "$SSH_KEY" /root/.ssh/id_home_lab
-                        cp "$SSH_KEY_PUB" /root/.ssh/id_home_lab.pub
-                        chmod 600 /root/.ssh/id_home_lab
-                        chmod 600 /root/.ssh/id_home_lab.pub
-                    '''
+        stage('Init') {
+            parallel {
+                stage('Init submodules') {
+                    steps {
+                        sh '''
+                            git config --global url."https://github.com/".insteadOf "git@github.com:"
+                            git submodule sync --recursive
+                            git submodule update --init --recursive
+                        '''
+                    }
                 }
-            }
-        }
 
-        stage('Prepare Config') {
-            steps {
-                script {
-                    withCredentials([string(credentialsId: 'user-cluster-k3s', variable: 'USER_CLUSTER'),
-                                     string(credentialsId: 'proxmox-access', variable: 'USER_PROXMOX')]) {
-                        def variablesTerraform = "containers = ${params.CONFIG_TERRAFORM}\n\n" +
-                                                 "ci_user = \"${USER_CLUSTER}\"\n\n" +
-                                                 "pm_user = \"${USER_PROXMOX}\""
-                        writeFile file: './terraform/variables.tfvars', text: variablesTerraform
+                stage('SSH key configuration') {
+                    steps {
+                        withCredentials([sshUserPrivateKey(credentialsId: 'id_home_lab', keyFileVariable: 'SSH_KEY'),
+                                         sshUserPrivateKey(credentialsId: 'id_home_lab_pub', keyFileVariable: 'SSH_KEY_PUB')]) {
+                            sh '''
+                                mkdir -p /root/.ssh
+                                cp "$SSH_KEY" /root/.ssh/id_home_lab
+                                cp "$SSH_KEY_PUB" /root/.ssh/id_home_lab.pub
+                                chmod 600 /root/.ssh/id_home_lab
+                                chmod 600 /root/.ssh/id_home_lab.pub
+                            '''
+                        }
+                    }
+                }
 
-                        def json = params.CONFIG_TERRAFORM.replaceAll("=", ":").replaceAll("([0-9\"])(\\s*\\n\\s*[a-zA-Z_])", '$1,\n$2')
-                        def arr = readJSON text: json
+                stage('Prepare Config') {
+                    steps {
+                        script {
+                            withCredentials([string(credentialsId: 'user-cluster-k3s', variable: 'USER_CLUSTER'),
+                                             string(credentialsId: 'proxmox-access', variable: 'USER_PROXMOX')]) {
+                                def variablesTerraform = "containers = ${params.CONFIG_TERRAFORM}\n\n" +
+                                                         "ci_user = \"${USER_CLUSTER}\"\n\n" +
+                                                         "pm_user = \"${USER_PROXMOX}\""
+                                writeFile file: './terraform/variables.tfvars', text: variablesTerraform
 
-                        def ip = arr[0].ip_address.toString().replaceAll("/24", "")
-                        def ansibleInventory = "[MAIN]\n" +
-                                               "${arr[0].name} ansible_host=${ip} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
+                                def json = params.CONFIG_TERRAFORM.replaceAll("=", ":").replaceAll("([0-9\"])(\\s*\\n\\s*[a-zA-Z_])", '$1,\n$2')
+                                def arr = readJSON text: json
 
-                        def masterAnsibleInventory = "[MASTER]\n"
+                                def ip = arr[0].ip_address.toString().replaceAll("/24", "")
+                                def ansibleInventory = "[MAIN]\n" +
+                                                       "${arr[0].name} ansible_host=${ip} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
 
-                        def workerAnsibleInventory = "[WORKER]\n"
-                        for (obj in arr) {
-                            if (obj.type.toString() == "master") {
-                                masterAnsibleInventory += "${obj.name} ansible_host=${obj.ip_address.toString().replaceAll("/24", "")} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
-                            } else {
-                                workerAnsibleInventory += "${obj.name} ansible_host=${obj.ip_address.toString().replaceAll("/24", "")} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
+                                def masterAnsibleInventory = "[MASTER]\n"
+
+                                def workerAnsibleInventory = "[WORKER]\n"
+                                for (obj in arr) {
+                                    if (obj.type.toString() == "master") {
+                                        masterAnsibleInventory += "${obj.name} ansible_host=${obj.ip_address.toString().replaceAll("/24", "")} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
+                                    } else {
+                                        workerAnsibleInventory += "${obj.name} ansible_host=${obj.ip_address.toString().replaceAll("/24", "")} ansible_user=${USER_CLUSTER} ansible_ssh_private_key_file=/root/.ssh/id_home_lab\n"
+                                    }
+                                }
+                                ansibleInventory += masterAnsibleInventory + workerAnsibleInventory
+
+                                writeFile file: './ansible/inventory.ini', text: ansibleInventory
+                            }
+                            withCredentials([file(credentialsId: 'env-terraform-proxmox-k3s', variable: 'ENV_TERRAFORM')]) {
+                                sh '''
+                                    cp "\$ENV_TERRAFORM" "./terraform/env.tfvars"
+                                '''
                             }
                         }
-                        ansibleInventory += masterAnsibleInventory + workerAnsibleInventory
-
-                        writeFile file: './ansible/inventory.ini', text: ansibleInventory
-                    }
-                    withCredentials([file(credentialsId: 'env-terraform-proxmox-k3s', variable: 'ENV_TERRAFORM')]) {
-                        sh '''
-                            cp "\$ENV_TERRAFORM" "./terraform/env.tfvars"
-                        '''
                     }
                 }
             }
