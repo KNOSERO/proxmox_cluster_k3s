@@ -1,17 +1,24 @@
 ---
 - name: Install global
   hosts: all
-  become: yes
+  become: true
   any_errors_fatal: true
   vars:
     nfs_shares:
-      - { server_ip: "192.168.0.2", remote: "/media_onyx", local: "/mnt/media_onyx" }
-      - { server_ip: "192.168.0.3", remote: "/media_ruby", local: "/mnt/media_ruby" }
+      - server_ip: "192.168.0.2"
+        remote: "/media_onyx"
+        local: "/mnt/media_onyx"
+      - server_ip: "192.168.0.3"
+        remote: "/media_ruby"
+        local: "/mnt/media_ruby"
+
     glusterfs_servers:
-      - 192.168.0.2
-      - 192.168.0.3
+      - "192.168.0.2"
+      - "192.168.0.3"
+
     glusterfs_mounts:
-      - { volume: core_data, mountpoint: /mnt/core_data }
+      - volume: "core_data"
+        mountpoint: "/mnt/core_data"
 
   tasks:
     - name: Run install_docker.yml
@@ -25,7 +32,7 @@
 
 - name: Install Keepalived
   hosts: MASTER
-  become: yes
+  become: true
   vars:
     virtual_ip: "192.168.0.152"
     virtual_router_id: 52
@@ -36,14 +43,13 @@
     - name: Run install_keepalived.yml
       include_tasks: task/ansible_keepalived/playbook.yml
 
-
 - name: Install K3s HA Cluster
   hosts: all
-  become: yes
+  become: true
   vars:
-    vip: 192.168.0.152
-    k3s_token_path: /var/lib/rancher/k3s/server/node-token
-    k3s_token_file: /tmp/k3s_token
+    vip: "192.168.0.152"
+    k3s_token_path: "/var/lib/rancher/k3s/server/node-token"
+    k3s_token_file: "/tmp/k3s_token"
     k3s_version: "v1.29.1+k3s1"
 
   tasks:
@@ -57,13 +63,13 @@
   tasks:
     - name: Set hostname
       ansible.builtin.hostname:
-        name: "{{ inventory_hostname }}"
+        name: "{{inventory_hostname}}"
 
     - name: Update /etc/hosts
       ansible.builtin.lineinfile:
-        path: /etc/hosts
+        path: "/etc/hosts"
         regexp: '^127\.0\.1\.1\s+'
-        line: "127.0.1.1 {{ inventory_hostname }}"
+        line: "127.0.1.1 {{inventory_hostname}}"
         state: present
 
 - name: Deploy Portainer Agent on Kubernetes and Generate Token For Jenkins
