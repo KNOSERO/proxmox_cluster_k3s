@@ -122,6 +122,56 @@ pipeline {
                 }
             }
         }
+
+        stage('Init') {
+            parallel {
+                stage('Init Pipeline Status') {
+                    when { expression { (env.PR_ACTION in ['opened','reopened','synchronize']) && env.PR_NUMBER }}
+                    steps {
+                        script {
+                            def sha = env.PR_SHA?.trim() ? env.PR_SHA : env.CHECKOUT_SHA
+                            if (sha?.trim()) {
+                                githubNotify credentialsId: env.CREDITS_ID,
+                                             account: env.ACCOUNT,
+                                             repo: env.REPO,
+                                             sha: "${sha}",
+                                             context: env.PIPELINE_NAME,
+                                             status: 'PENDING',
+                                             description: 'Pipeline started'
+                            }
+                        }
+                    }
+                }
+
+                stage('Init Submodules') {
+                    steps {
+                        script {
+                            sh '''
+                                git config --global url."https://github.com/".insteadOf "git@github.com:"
+                                git submodule sync --recursive
+                                git submodule update --init --recursive
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Test') {
+            parallel {
+                stage('Test Terraform') {
+                    steps {
+                        script {
+                            sh '''
+                                terraform init -backend=false
+                                terraform fmt -check -recursive
+                                terraform validate
+                            '''
+                        }
+                    }
+                }
+            }
+        }
     }
     post {
         success {
