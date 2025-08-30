@@ -150,7 +150,7 @@ pipeline {
                                     terraform fmt -check -recursive
                                     EXIT_CODE=$?
                                     if [ $EXIT_CODE -ne 0 ]; then
-                                      echo "❌ Terraform fmt failed! Pliki wymagają przeformatowania:"
+                                      echo "Terraform fmt failed!"
                                       terraform fmt -recursive -diff
                                       exit $EXIT_CODE
                                     fi
