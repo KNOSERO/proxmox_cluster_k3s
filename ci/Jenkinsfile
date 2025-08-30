@@ -43,4 +43,34 @@ pipeline {
             }
         }
     }
+    post {
+        success {
+            script {
+                def sha = env.PR_SHA?.trim() ? env.PR_SHA : env.CHECKOUT_SHA
+                if (sha?.trim()) {
+                    githubNotify credentialsId: env.CREDITS_ID,
+                                 account: env.ACCOUNT,
+                                 repo: env.REPO,
+                                 sha: "${sha}",
+                                 context: env.PIPELINE_NAME,
+                                 status: 'SUCCESS',
+                                 description: 'All stages passed ✅'
+                }
+            }
+        }
+        failure {
+            script {
+                def sha = env.PR_SHA?.trim() ? env.PR_SHA : env.CHECKOUT_SHA
+                if (sha?.trim()) {
+                    githubNotify credentialsId: env.CREDITS_ID,
+                                 account: env.ACCOUNT,
+                                 repo: env.REPO,
+                                 sha: "${sha}",
+                                 context: env.PIPELINE_NAME,
+                                 status: 'FAILURE',
+                                 description: 'Pipeline failed ❌'
+                }
+            }
+        }
+    }
 }
