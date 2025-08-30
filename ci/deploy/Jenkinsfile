@@ -2,8 +2,37 @@ pipeline {
     agent {
         label 'home'
     }
-
+    options {
+        skipDefaultCheckout();
+        timestamps();
+        ansiColor('xterm')
+    }
+    environment {
+        REPO_URL = 'https://github.com/KNOSERO/proxmox_cluster_k3s.git'
+        CREDITS_ID = 'github-token'
+        ACCOUNT = 'KNOSERO'
+        REPO = 'docker_services'
+    }
     stages {
+        stage('Checkout') {
+            steps {
+                checkout([$class: 'GitSCM',
+                    userRemoteConfigs: [[
+                        name: 'origin',
+                        url: env.REPO_URL,
+                        credentialsId: env.CREDITS_ID,
+                        refspec: '+refs/heads/*:refs/remotes/origin/*'
+                    ]],
+                    branches: [[ name: "${env.BRANCH}" ]],
+                    extensions: [
+                        [$class: 'CloneOption', shallow: true, depth: 25, noTags: true, timeout: 240],
+                        [$class: 'PruneStaleBranch'],
+                        [$class: 'CleanBeforeCheckout']
+                    ]
+                ])
+            }
+        }
+
         stage('Init Submodule') {
             steps {
                 sh '''
@@ -79,21 +108,18 @@ pipeline {
                     def json = params.CONFIG_TERRAFORM.replaceAll("=", ":").replaceAll("([0-9\"])(\\s*\\n\\s*[a-zA-Z_])", '$1,\n$2')
                     def arr = readJSON text: json
 
-                    ansiColor('xterm') {
-                        dir('terraform') {
-                            sh '''
-                                terraform init -upgrade
-                            '''
-                            arr.each { obj ->
-                                sh """
-                                  terraform import \
-                                    -var-file=variables.tfvars \
-                                    -var-file=env.tfvars \
-                                    'proxmox_vm_qemu.ubuntu_vm[\"${obj.name}\"]' \
-                                    '${obj.target_node}/qemu/${obj.vmid}' || true
-                                """
-                            }
-                        }
+                    dir('terraform') {
+                        sh '''
+                            terraform init -upgrade
+                        '''
+                        arr.each { obj ->
+                        sh """
+                            terraform import \
+                                -var-file=variables.tfvars \
+                                -var-file=env.tfvars \
+                                'proxmox_vm_qemu.ubuntu_vm[\"${obj.name}\"]' \
+                                '${obj.target_node}/qemu/${obj.vmid}' || true
+                        """
                     }
                 }
             }
@@ -106,12 +132,10 @@ pipeline {
                         expression { params.TASK == 'destroy' }
                     }
                     steps {
-                        ansiColor('xterm') {
-                            dir('terraform') {
-                                sh '''
-                                    terraform destroy -var-file=variables.tfvars -var-file=env.tfvars -auto-approve
-                                '''
-                            }
+                        dir('terraform') {
+                            sh '''
+                                terraform destroy -var-file=variables.tfvars -var-file=env.tfvars -auto-approve
+                            '''
                         }
                     }
                 }
@@ -121,13 +145,11 @@ pipeline {
                         expression { params.TASK == 'apply' }
                     }
                     steps {
-                        ansiColor('xterm') {
-                            dir('terraform') {
-                                sh '''
-                                    terraform plan -var-file=variables.tfvars -var-file=env.tfvars
-                                    terraform apply -var-file=variables.tfvars -var-file=env.tfvars -auto-approve
-                                '''
-                            }
+                        dir('terraform') {
+                            sh '''
+                                terraform plan -var-file=variables.tfvars -var-file=env.tfvars
+                                terraform apply -var-file=variables.tfvars -var-file=env.tfvars -auto-approve
+                            '''
                         }
                     }
                 }
@@ -142,16 +164,14 @@ pipeline {
                 ANSIBLE_HOST_KEY_CHECKING = 'False'
             }
             steps {
-                ansiColor('xterm') {
-                    dir('ansible') {
-                        sh '''
-                            for i in 1 2 3; do
-                                ansible-playbook -i inventory.ini playbook.yml && break
-                                echo "Playbook failed, retrying in 20s ($i/3)..."
-                                sleep 20
-                            done
-                        '''
-                    }
+                dir('ansible') {
+                    sh '''
+                        for i in 1 2 3; do
+                            ansible-playbook -i inventory.ini playbook.yml && break
+                            echo "Playbook failed, retrying in 20s ($i/3)..."
+                            sleep 20
+                        done
+                    '''
                 }
             }
         }
