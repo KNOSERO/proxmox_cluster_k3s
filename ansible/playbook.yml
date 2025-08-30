@@ -2,7 +2,7 @@
 - name: Install global
   hosts: all
   become: true
-  any_errors_fatal: true
+  any_errors_fatal: yes
   vars:
     nfs_shares:
       - server_ip: "192.168.0.2"
