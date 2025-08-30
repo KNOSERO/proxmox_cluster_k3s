@@ -13,6 +13,7 @@ pipeline {
         ACCOUNT = 'KNOSERO'
         REPO = 'docker_services'
     }
+
     stages {
         stage('Checkout') {
             steps {
@@ -113,13 +114,14 @@ pipeline {
                             terraform init -upgrade
                         '''
                         arr.each { obj ->
-                        sh """
-                            terraform import \
-                                -var-file=variables.tfvars \
-                                -var-file=env.tfvars \
-                                'proxmox_vm_qemu.ubuntu_vm[\"${obj.name}\"]' \
-                                '${obj.target_node}/qemu/${obj.vmid}' || true
-                        """
+                            sh """
+                                terraform import \
+                                    -var-file=variables.tfvars \
+                                    -var-file=env.tfvars \
+                                    'proxmox_vm_qemu.ubuntu_vm[\"${obj.name}\"]' \
+                                    '${obj.target_node}/qemu/${obj.vmid}' || true
+                            """
+                        }
                     }
                 }
             }
@@ -127,7 +129,7 @@ pipeline {
 
         stage('Terraform') {
             parallel {
-                stage('Destroy Custer') {
+                stage('Destroy Cluster') {
                     when {
                         expression { params.TASK == 'destroy' }
                     }
@@ -140,7 +142,7 @@ pipeline {
                     }
                 }
 
-                stage('Apply Custer') {
+                stage('Apply Cluster') {
                     when {
                         expression { params.TASK == 'apply' }
                     }
