@@ -128,11 +128,13 @@ pipeline {
                 stage('Test Terraform') {
                     steps {
                         script {
-                            sh '''
-                                terraform init -backend=false
-                                terraform fmt -check -recursive
-                                terraform validate
-                            '''
+                            dir('terraform') {
+                                sh '''
+                                    terraform init -backend=false
+                                    terraform fmt -check -recursive
+                                    terraform validate
+                                '''
+                            }
                         }
                     }
                 }
