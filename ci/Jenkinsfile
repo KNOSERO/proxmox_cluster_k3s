@@ -120,6 +120,20 @@ pipeline {
                         }
                     }
                 }
+
+                stage('Fake inventory') {
+                    steps {
+                        script {
+                            def fakeInventory = "[MAIN]\n" +
+                                                "127.0.0.1\n\n" +
+                                                "[MASTER]\n" +
+                                                "127.0.0.1\n\n" +
+                                                "[WORKER]\n" +
+                                                "127.0.0.1\n\n" +
+                            writeFile file: './ansible/inventory.ini', text: ansibleInventory
+                        }
+                    }
+                }
             }
         }
 
@@ -151,7 +165,7 @@ pipeline {
                         script {
                             dir('ansible') {
                                 sh '''
-                                    ansible-playbook --syntax-check playbook.yml
+                                    ansible-playbook --syntax-check -i inventory.ini playbook.yml
                                     ansible-lint playbook.yml
                                 '''
                             }
