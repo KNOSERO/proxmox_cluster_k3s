@@ -1,0 +1,207 @@
+pipeline {
+    agent {
+        label 'home'
+    }
+    options {
+        skipDefaultCheckout();
+        timestamps();
+        ansiColor('xterm')
+    }
+    environment {
+        REPO_URL = 'https://github.com/KNOSERO/proxmox_cluster_k3s.git'
+        CREDITS_ID = 'github-token'
+        DEFAULT_BRANCH = 'master'
+        SECRET_WEBHOOK = 'github-secret-webhook'
+        ACCOUNT = 'KNOSERO'
+        REPO = 'proxmox_cluster_k3s'
+        PIPELINE_NAME = 'proxmox_cluster_k3s_validate'
+    }
+    stages {
+        stage('Configure Triggers') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'proxmox_cluster_k3s_token', variable: 'TOKEN_WEBHOOK')]) {
+                        properties([
+                            pipelineTriggers([
+                                [
+                                    $class: 'GenericTrigger',
+                                    genericVariables: [
+                                        [key: 'PR_ACTION', value: '$.action',                 expressionType: 'JSONPath', defaultValue: ''],
+                                        [key: 'PR_NUMBER', value: '$.number',                 expressionType: 'JSONPath', defaultValue: ''],
+                                        [key: 'PR_SHA',    value: '$.pull_request.head.sha',  expressionType: 'JSONPath', defaultValue: '']
+                                    ],
+                                    token: TOKEN_WEBHOOK,
+                                    printContributedVariables: true,
+                                    printPostContent: false,
+                                    regexpFilterText: '$PR_ACTION',
+                                    regexpFilterExpression: 'opened|reopened|synchronize'
+                                ]
+                            ])
+                        ])
+                    }
+                }
+            }
+        }
+
+        stage('Checkout') {
+            parallel {
+                stage('Checkout PR') {
+                    when { expression { (env.PR_ACTION in ['opened','reopened','synchronize']) && env.PR_NUMBER }}
+                    steps {
+                        script {
+                            checkout([$class: 'GitSCM',
+                                userRemoteConfigs: [[
+                                    name: 'origin',
+                                    url: env.REPO_URL,
+                                    credentialsId: env.CREDITS_ID,
+                                    refspec: '+refs/heads/*:refs/remotes/origin/* +refs/pull/*:refs/remotes/origin/pr/*'
+                                ]],
+                                branches: [[ name: "origin/pr/${env.PR_NUMBER}/merge" ]],
+                                extensions: [
+                                    [$class: 'CloneOption', shallow: true, depth: 25, noTags: true, timeout: 240],
+                                    [$class: 'PruneStaleBranch'],
+                                    [$class: 'CleanBeforeCheckout']
+                                ]
+                            ])
+                        }
+                    }
+                }
+
+                stage('Checkout Manual') {
+                    when { not { expression { env.PR_ACTION in ['opened','reopened','synchronize'] } } }
+                    steps {
+                        checkout([$class: 'GitSCM',
+                            userRemoteConfigs: [[
+                                name: 'origin',
+                                url: env.REPO_URL,
+                                credentialsId: env.CREDITS_ID,
+                                refspec: '+refs/heads/*:refs/remotes/origin/*'
+                            ]],
+                            branches: [[ name: "*/${env.DEFAULT_BRANCH}" ]],
+                            extensions: [
+                                [$class: 'CloneOption', shallow: true, depth: 25, noTags: true, timeout: 240],
+                                [$class: 'PruneStaleBranch'],
+                                [$class: 'CleanBeforeCheckout']
+                            ]
+                        ])
+                    }
+                }
+            }
+        }
+
+        stage('Init') {
+            parallel {
+                stage('Init Pipeline Status') {
+                    when { expression { (env.PR_ACTION in ['opened','reopened','synchronize']) && env.PR_NUMBER }}
+                    steps {
+                        script {
+                            def sha = env.PR_SHA?.trim() ? env.PR_SHA : env.CHECKOUT_SHA
+                            if (sha?.trim()) {
+                                githubNotify credentialsId: env.CREDITS_ID,
+                                             account: env.ACCOUNT,
+                                             repo: env.REPO,
+                                             sha: "${sha}",
+                                             context: env.PIPELINE_NAME,
+                                             status: 'PENDING',
+                                             description: 'Pipeline started'
+                            }
+                        }
+                    }
+                }
+
+                stage('Init Submodules') {
+                    steps {
+                        script {
+                            sh '''
+                                git config --global url."https://github.com/".insteadOf "git@github.com:"
+                                git submodule sync --recursive
+                                git submodule update --init --recursive --remote
+                            '''
+                        }
+                    }
+                }
+
+                stage('Fake inventory') {
+                    steps {
+                        script {
+                            def fakeInventory = "[MAIN]\n" +
+                                                "127.0.0.1\n\n" +
+                                                "[MASTER]\n" +
+                                                "127.0.0.1\n\n" +
+                                                "[WORKER]\n" +
+                                                "127.0.0.1\n\n"
+                            writeFile file: './ansible/inventory.ini', text: fakeInventory
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Test') {
+            parallel {
+                stage('Test Terraform') {
+                    steps {
+                        script {
+                            dir('terraform') {
+                                sh '''
+                                    terraform init -backend=false
+                                    set +e
+                                    echo "[INFO] Running terraform fmt validation..."
+                                    terraform fmt -check -recursive
+                                    EXIT_CODE=$?
+                                    if [ $EXIT_CODE -ne 0 ]; then
+                                      echo "Terraform fmt failed!"
+                                      terraform fmt -recursive -diff
+                                      exit $EXIT_CODE
+                                    fi
+                                    terraform validate
+                                '''
+                            }
+                        }
+                    }
+                }
+                stage('Test Ansible') {
+                    steps {
+                        script {
+                            dir('ansible') {
+                                sh '''
+                                    ansible-playbook --syntax-check -i inventory.ini playbook.yml
+                                '''
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    post {
+        success {
+            script {
+                def sha = env.PR_SHA?.trim() ? env.PR_SHA : env.CHECKOUT_SHA
+                if (sha?.trim()) {
+                    githubNotify credentialsId: env.CREDITS_ID,
+                                 account: env.ACCOUNT,
+                                 repo: env.REPO,
+                                 sha: "${sha}",
+                                 context: env.PIPELINE_NAME,
+                                 status: 'SUCCESS',
+                                 description: 'All stages passed ✅'
+                }
+            }
+        }
+        failure {
+            script {
+                def sha = env.PR_SHA?.trim() ? env.PR_SHA : env.CHECKOUT_SHA
+                if (sha?.trim()) {
+                    githubNotify credentialsId: env.CREDITS_ID,
+                                 account: env.ACCOUNT,
+                                 repo: env.REPO,
+                                 sha: "${sha}",
+                                 context: env.PIPELINE_NAME,
+                                 status: 'FAILURE',
+                                 description: 'Pipeline failed ❌'
+                }
+            }
+        }
+    }
+}
