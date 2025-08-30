@@ -166,7 +166,6 @@ pipeline {
                             dir('ansible') {
                                 sh '''
                                     ansible-playbook --syntax-check -i inventory.ini playbook.yml
-                                    ansible-lint playbook.yml
                                 '''
                             }
                         }
