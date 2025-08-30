@@ -129,7 +129,7 @@ pipeline {
                                                 "[MASTER]\n" +
                                                 "127.0.0.1\n\n" +
                                                 "[WORKER]\n" +
-                                                "127.0.0.1\n\n" +
+                                                "127.0.0.1\n\n"
                             writeFile file: './ansible/inventory.ini', text: fakeInventory
                         }
                     }
