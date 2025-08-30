@@ -20,7 +20,7 @@ pipeline {
         stage('Configure Triggers') {
             steps {
                 script {
-                    withCredentials([string(credentialsId: 'webhookCredentials', variable: 'TOKEN_WEBHOOK')]) {
+                    withCredentials([string(credentialsId: 'proxmox_cluster_k3s_token', variable: 'TOKEN_WEBHOOK')]) {
                         properties([
                             pipelineTriggers([
                                 [
