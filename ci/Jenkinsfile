@@ -131,7 +131,15 @@ pipeline {
                             dir('terraform') {
                                 sh '''
                                     terraform init -backend=false
+                                    set +e
+                                    echo "[INFO] Running terraform fmt validation..."
                                     terraform fmt -check -recursive
+                                    EXIT_CODE=$?
+                                    if [ $EXIT_CODE -ne 0 ]; then
+                                      echo "❌ Terraform fmt failed! Pliki wymagają przeformatowania:"
+                                      terraform fmt -recursive -diff
+                                      exit $EXIT_CODE
+                                    fi
                                     terraform validate
                                 '''
                             }
